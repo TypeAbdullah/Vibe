@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A premium calculator powered natively by WebAssembly and the Vibe programming language.">
+  <title>Vibe WASM Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 50% 50%, #1e1b4b, #0f0c29, #03001e);
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-green: #10b981;
+      --accent-blue: #3b82f6;
+      --accent-purple: #8b5cf6;
+      --btn-bg: rgba(255, 255, 255, 0.05);
+      --btn-hover: rgba(255, 255, 255, 0.1);
+      --btn-active: rgba(255, 255, 255, 0.2);
+    }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-gradient);
+      color: #f4f4f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      padding: 1.5rem;
+    }
+
+    .calculator-container {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .calculator-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin: 0.25rem 0 0 0;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .screen {
+      position: relative;
+      z-index: 1;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: right;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    #display {
+      font-size: 2.5rem;
+      font-weight: 600;
+      color: #fff;
+      word-break: break-all;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+
+    .grid {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+    }
+
+    button {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem 0;
+      background: var(--btn-bg);
+      color: #f3f4f6;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+
+    button:hover {
+      background: var(--btn-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    button:active {
+      background: var(--btn-active);
+      transform: translateY(1px);
+    }
+
+    button.operator {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    button.operator:hover {
+      background: rgba(59, 130, 246, 0.25);
+    }
+
+    button.clear {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+      border-color: rgba(239, 68, 68, 0.3);
+      grid-column: span 2;
+    }
+
+    button.clear:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    button.equal {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      color: #fff;
+      border: none;
+      grid-column: span 2;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+    }
+
+    button.equal:hover {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+    }
+
+    footer {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+  </style>
+  <script src="vibe-runtime.js"></script>
+</head>
+<body>
+  <div class="calculator-container">
+    <header>
+      <h1>Vibe CalcuWasm</h1>
+      <div class="subtitle">Compiled Vibe Programming Language</div>
+    </header>
+
+    <div class="screen">
+      <div id="display">0</div>
+    </div>
+
+    <div class="grid">
+      <!-- Row 1 -->
+      <button class="clear" id="btn-clear" onclick="clearCalculator()">C</button>
+      <button class="operator" id="btn-div" onclick="setOperator(4)">÷</button>
+      <button class="operator" id="btn-mul" onclick="setOperator(3)">×</button>
+      
+      <!-- Row 2 -->
+      <button id="btn-7" onclick="enterDigit(7)">7</button>
+      <button id="btn-8" onclick="enterDigit(8)">8</button>
+      <button id="btn-9" onclick="enterDigit(9)">9</button>
+      <button class="operator" id="btn-sub" onclick="setOperator(2)">-</button>
+
+      <!-- Row 3 -->
+      <button id="btn-4" onclick="enterDigit(4)">4</button>
+      <button id="btn-5" onclick="enterDigit(5)">5</button>
+      <button id="btn-6" onclick="enterDigit(6)">6</button>
+      <button class="operator" id="btn-add" onclick="setOperator(1)">+</button>
+
+      <!-- Row 4 -->
+      <button id="btn-1" onclick="enterDigit(1)">1</button>
+      <button id="btn-2" onclick="enterDigit(2)">2</button>
+      <button id="btn-3" onclick="enterDigit(3)">3</button>
+      <button id="btn-0" onclick="enterDigit(0)">0</button>
+
+      <!-- Row 5 -->
+      <button class="equal" id="btn-equal" onclick="calculate()">=</button>
+    </div>
+  </div>
+
+  <footer>
+    Powered by 100% Native WebAssembly.
+  </footer>
+
+  <script>
+    let wasmInstance = null;
+    const runtime = createVibeRuntime();
+
+    function enterDigit(digit) {
+      if (wasmInstance) {
+        wasmInstance.exports.press_digit(digit);
+      }
+    }
+
+    function setOperator(op) {
+      if (wasmInstance) {
+        wasmInstance.exports.press_operator(op);
+      }
+    }
+
+    function clearCalculator() {
+      if (wasmInstance) {
+        wasmInstance.exports.press_clear();
+      }
+    }
+
+    function calculate() {
+      if (wasmInstance) {
+        wasmInstance.exports.press_equal();
+      }
+    }
+
+    fetch('calculator.wasm')
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to load Wasm binary');
+        return response.arrayBuffer();
+      })
+      .then(bytes => WebAssembly.instantiate(bytes, runtime.imports))
+      .then(results => {
+        wasmInstance = results.instance;
+        runtime.setInstance(wasmInstance);
+        
+        // Initialize display from the WebAssembly program
+        wasmInstance.exports.init_calculator();
+      })
+      .catch(console.error);
+  </script>
+</body>
+</html>

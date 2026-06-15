@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vibe WebAssembly App</title>
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      padding: 3rem;
+      background: radial-gradient(circle at center, #18181b, #09090b);
+      color: #f4f4f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 2.5rem;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(to right, #4ade80, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 0;
+    }
+    p {
+      color: #a1a1aa;
+      line-height: 1.6;
+    }
+    #counter-val {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #60a5fa;
+      margin: 2rem 0;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+    }
+    #console {
+      background: #000;
+      padding: 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      text-align: left;
+      font-size: 0.9rem;
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid #27272a;
+    }
+    .console-line {
+      margin: 0.25rem 0;
+    }
+    .console-line.system { color: #71717a; }
+    .console-line.output { color: #f4f4f5; }
+  </style>
+  <script src="vibe-runtime.js"></script>
+</head>
+<body>
+  <div class="card">
+    <h1>Vibe Language Demo</h1>
+    <p>Running natively in WebAssembly (compiled from <code>test.vibe</code>)</p>
+    
+    <div id="counter-val">Loading Wasm...</div>
+
+    <h3>Compiler Stdout Console</h3>
+    <div id="console"></div>
+  </div>
+
+  <script>
+    const consoleDiv = document.getElementById('console');
+    
+    function logToScreen(text, type = 'output') {
+      const line = document.createElement('div');
+      line.className = `console-line ${type}`;
+      line.textContent = text;
+      consoleDiv.appendChild(line);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    // Initialize Vibe runtime
+    const runtime = createVibeRuntime();
+    
+    // Override default print to show on screen
+    runtime.imports.env.print_string = (ptr) => {
+      const str = runtime.getString(ptr);
+      logToScreen(str, 'output');
+      console.log(str);
+    };
+    runtime.imports.env.print_int = (val) => {
+      logToScreen(String(val), 'output');
+      console.log(val);
+    };
+
+    logToScreen('[System] Loading WebAssembly binary...', 'system');
+
+    fetch('test.wasm')
+      .then(response => {
+        if (!response.ok) throw new Error('Failed to fetch test.wasm');
+        return response.arrayBuffer();
+      })
+      .then(bytes => WebAssembly.instantiate(bytes, runtime.imports))
+      .then(results => {
+        runtime.setInstance(results.instance);
+        logToScreen('[System] Wasm loaded. Invoking Vibe main()...', 'system');
+        
+        // Execute the main entry point
+        results.instance.exports.main();
+        
+        logToScreen('[System] Execution finished.', 'system');
+      })
+      .catch(err => {
+        logToScreen('[Error] ' + err.message, 'system');
+        console.error(err);
+      });
+  </script>
+</body>
+</html>

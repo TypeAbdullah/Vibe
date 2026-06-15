@@ -1,0 +1,17 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Compiled Vibe/Wasm assets
+*.wasm
+*.wat
+test.js
+
+# React demo generated files
+react-demo/node_modules/
+react-demo/dist/
+react-demo/src/calculator.wasm
+react-demo/src/calculator.wat

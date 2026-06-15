@@ -1,0 +1,30 @@
+{
+  "name": "vibe-compiler",
+  "version": "1.0.0",
+  "description": "The Vibe language compiler",
+  "main": "index.js",
+  "files": [
+    "src",
+    "index.js",
+    "vibec.js",
+    "vibe-runtime.js",
+    "vite-plugin-vibe.js",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node vibec.js test.vibe",
+    "start": "npx http-server -p 3067"
+  },
+  "keywords": [
+    "vibe",
+    "compiler"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bin": {
+    "vibec": "./vibec.js"
+  },
+  "dependencies": {
+    "wabt": "^1.0.39"
+  }
+}

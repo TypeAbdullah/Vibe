@@ -1,0 +1,56 @@
+create variable current_val as 0
+create variable saved_val as 0
+create variable active_op as 0 // 1: +, 2: -, 3: *, 4: /
+create variable is_entering_new as 0
+
+define function press_digit with digit as
+  if is_entering_new == 1 then
+    current_val = digit
+    is_entering_new = 0
+  else
+    current_val = current_val * 10
+    current_val = current_val + digit
+  end
+  set element "display" text to "" + current_val
+end
+
+define function press_operator with op as
+  saved_val = current_val
+  active_op = op
+  is_entering_new = 1
+end
+
+define function press_clear as
+  current_val = 0
+  saved_val = 0
+  active_op = 0
+  is_entering_new = 0
+  set element "display" text to "0"
+end
+
+define function press_equal as
+  if active_op == 1 then
+    current_val = saved_val + current_val
+  end
+  if active_op == 2 then
+    current_val = saved_val - current_val
+  end
+  if active_op == 3 then
+    current_val = saved_val * current_val
+  end
+  if active_op == 4 then
+    if current_val == 0 then
+      set element "display" text to "Error"
+      return 0
+    else
+      current_val = saved_val / current_val
+    end
+  end
+  active_op = 0
+  is_entering_new = 1
+  set element "display" text to "" + current_val
+end
+
+define function init_calculator as
+  set element "display" text to "0"
+end

@@ -1,0 +1,23 @@
+create variable count as 0
+
+define function increment with x as
+  return x + 1
+end
+
+show "Hello from Vibe!"
+
+loop 5 times
+  count = increment(count)
+end
+
+show "Loop completed. Current count:"
+show count
+
+if count > 4 then
+  show "Condition met: count is greater than 4"
+else
+  show "Condition met: count is 4 or less"
+end
+
+// This will try to update DOM in browser or log warning in Node
+set element "counter-val" text to "Final Vibe Count: " + count
